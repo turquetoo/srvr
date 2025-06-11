@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .blur-content { filter: blur(2px); }
+        .blur-light { filter: blur(1px); }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .animate-ping { animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-bounce { animation: bounce 1s infinite; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } }
+        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+        .gradient-instagram { background: linear-gradient(90deg, #E4405F 0%, #833AB4 50%, #F56040 100%); }
+        .shadow-instagram { box-shadow: 0 10px 40px rgba(228, 64, 95, 0.4); }
+    </style>
+</head>
+<body>
+    <div id="instagram-app" class="fixed inset-0 w-screen h-screen bg-white z-50 overflow-hidden">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-white z-50">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+                <p class="text-gray-600">Carregando Instagram...</p>
+            </div>
+        </div>
+
+        <!-- Main Chat List View -->
+        <div id="main-view" class="h-full w-full bg-white flex flex-col hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 py-4 bg-white border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <h1 id="username-header" class="text-xl font-bold text-black">c.dthr</h1>
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" class="text-black">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                    </svg>
+                </div>
+                <div class="flex items-center gap-5">
+                    <i class="fas fa-robot text-2xl text-gray-600"></i>
+                    <i class="fas fa-edit text-2xl text-gray-600"></i>
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 min-h-0 overflow-y-auto">
+                <!-- Search -->
+                <div class="px-4 pt-4 pb-4 bg-white sticky top-0 z-10 border-b border-gray-50">
+                    <div class="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-3">
+                        <i class="fas fa-search text-gray-400"></i>
+                        <span class="text-gray-400 text-sm font-medium">Perguntar ao Meta AI</span>
+                    </div>
+                </div>
+
+                <!-- Stories Section -->
+                <div class="mb-4">
+                    <div id="stories-container" class="flex gap-10 overflow-x-auto pb-2 px-4 scrollbar-hide">
+                        <!-- Stories will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Messages Header -->
+                <div class="flex items-center justify-between px-4 py-3 mb-2">
+                    <h2 class="text-base font-semibold text-black">Mensagens</h2>
+                    <span class="text-blue-500 text-sm font-medium">Solicitações</span>
+                </div>
+
+                <!-- Chat List -->
+                <div id="chats-container" class="pb-5">
+                    <!-- Chats will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat View -->
+        <div id="chat-view" class="flex flex-col h-full w-full bg-white hidden">
+            <!-- Chat Header -->
+            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <i id="back-button" class="fas fa-chevron-left text-lg cursor-pointer text-black"></i>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full overflow-hidden">
+                            <img id="chat-avatar" src="" alt="User" class="w-full h-full object-cover blur-content" />
+                        </div>
+                        <div>
+                            <p id="chat-username" class="font-medium text-sm text-black blur-content truncate flex items-center gap-1 max-w-[150px]">
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </p>
+                            <p id="chat-fullname" class="text-xs text-gray-500 blur-content truncate max-w-[150px]"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-5">
+                    <i class="fas fa-phone text-gray-400 blur-content"></i>
+                    <i class="fas fa-video text-gray-400 blur-content"></i>
+                    <i class="fas fa-info-circle text-gray-400 blur-content"></i>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 relative">
+                <!-- Blocked Content Overlay -->
+                <div id="content-overlay" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-10/12 max-w-xs">
+                    <div class="rounded-xl shadow-2xl border-2 border-pink-400 gradient-instagram">
+                        <div class="p-3">
+                            <div class="flex items-center justify-center mb-2">
+                                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-exclamation-triangle text-pink-600 text-lg animate-bounce"></i>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="text-sm font-bold text-white mb-1 drop-shadow-lg">⚠️ Conteúdo Bloqueado</h3>
+                                <p class="text-pink-100 text-xs leading-relaxed mb-2 font-medium">Este conteúdo está restrito e só pode ser acessado com uma conta premium</p>
+                                <div class="px-2 py-1 rounded-lg border border-white/30 bg-white/20">
+                                    <p class="text-white font-bold text-xs flex items-center justify-center gap-1">🔒 Premium Necessário</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="messages-container" class="pt-20">
+                    <!-- Messages will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2">
+                        <span class="text-gray-500 text-sm">Mensagem...</span>
+                    </div>
+                    <i class="fas fa-camera text-gray-400"></i>
+                    <i class="fas fa-paper-plane text-blue-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Button -->
+        <div class="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-black/20 to-transparent">
+            <button id="access-button" class="w-full text-white py-4 px-6 rounded-2xl shadow-2xl flex items-center justify-center gap-3 border-2 gradient-instagram shadow-instagram transform hover:scale-102 transition-transform">
+                <span class="font-bold text-lg drop-shadow-lg">🔥 Desbloquear Acesso Total por R$ <span id="price-display">29,90</span></span>
+            </button>
+        </div>
+
+        <!-- New Message Popup -->
+        <div id="message-popup" class="fixed top-16 left-4 right-4 z-50 justify-center hidden">
+            <div class="max-w-sm w-full rounded-2xl shadow-2xl border-2 border-pink-400 gradient-instagram">
+                <div class="px-5 py-4 relative">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-comment text-white text-xl animate-pulse"></i>
+                        </div>
+                        <div class="text-white flex-1 min-w-0">
+                            <h3 class="font-bold text-base drop-shadow-lg leading-tight">🔥 Novas Mensagens Encontradas</h3>
+                            <p class="text-pink-100 text-sm font-medium mt-1">Conteúdo exclusivo disponível</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute -top-3 -right-3 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                    <span class="text-white text-xs font-bold animate-bounce">!</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentView = 'main';
+        let selectedChat = null;
+        let followersData = [];
+        let profileData = null;
+        let feedData = null;
+        let username = 'c.dthr';
+        let mockChats = [];
+        
+        // API Base URL - use local server when running locally
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3001' 
+            : 'https://instag-api-p2pfp.ondigitalocean.app';
+
+        // Get URL parameter
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Debug function to test server connectivity
+        async function testServerConnection() {
+            try {
+                console.log('Testing server connection...');
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Server health check:', data);
+                    return true;
+                } else {
+                    console.error('Server health check failed:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Server connection error:', error);
+                return false;
+            }
+        }
+
+        // API functions
+        async function fetchProfileData(username) {
+            try {
+                console.log('Fetching profile data for:', username);
+                const response = await fetch(`${API_BASE_URL}/api/profile-data`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching profile data:', error);
+                return {
+                    data: {
+                        username: username,
+                        full_name: username.charAt(0).toUpperCase() + username.slice(1),
+                        profile_pic_url: `https://picsum.photos/150/150?random=${username}`,
+                        follower_count: Math.floor(Math.random() * 10000),
+                        following_count: Math.floor(Math.random() * 1000),
+                        biography: "Bio do usuário",
+                        is_private: false,
+                        is_verified: false,
+                        media_count: Math.floor(Math.random() * 500)
+                    }
+                };
+            }
+        }
+
+        async function fetchFollowersAndStories(username) {
+            try {
+                console.log('Fetching followers for:', username);
+                const response = await fetch(`${API_BASE_URL}/api/followers-stories`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching followers:', error);
+                // Generate mock followers
+                const mockFollowers = [];
+                for (let i = 0; i < 10; i++) {
+                    mockFollowers.push({
+                        id: `follower_${i}`,
+                        username: `user_${i}_${username}`,
+                        full_name: `Follower ${i} ${username}`,
+                        profile_pic_url: `https://picsum.photos/64/64?random=${username}_${i}`,
+                        is_private: false,
+                        is_verified: i % 5 === 0
+                    });
+                }
+                
+                return {
+                    data: { items: mockFollowers },
+                    stories: { items: [] }
+                };
+            }
+        }
+
+        async function fetchFeedMedia(username) {
+            try {
+                console.log('Fetching feed for:', username);
+                const response = await fetch(`${API_BASE_URL}/api/feed-media`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching feed media:', error);
+                return {
+                    data: {
+                        items: [{
+                            thumbnail_url: `https://picsum.photos/400/300?random=${username}_feed`
+                        }]
+                    }
+                };
+            }
+        }
+
+        // Generate chats from followers
+        function generateChatsFromFollowers() {
+            const messagePhrases = [
+                "2 reels não assistidos", "Curtiu uma mensagem", "fala meu querido", "Enviado há 2 h",
+                "1 reel não assistido", "Colaborando...", "Viu sua mensagem", "Online agora"
+            ];
+            const times = ["13 min", "1 h", "2 h", "14 h", "16 h", "19 h", "1 d", "2 d"];
+
+            if (followersData.length > 0) {
+                return followersData.slice(0, 8).map((follower, index) => ({
+                    id: follower.id || index.toString(),
+                    username: follower.username,
+                    fullName: follower.full_name,
+                    avatar: `${API_BASE_URL}/api/proxy/instagram-image?url=${encodeURIComponent(follower.profile_pic_url)}`,
+                    lastMessage: messagePhrases[index % messagePhrases.length],
+                    time: times[index % times.length],
+                    unread: index % 3 === 0,
+                    online: index % 5 === 0,
+                }));
+            }
+
+            return [
+                { id: "1", username: "r****que", fullName: "R****** R****", avatar: `https://picsum.photos/64/64?random=1`, lastMessage: "2 reels não assistidos", time: "13 min", unread: true },
+                { id: "2", username: "c***u", fullName: "C***** *******", avatar: `https://picsum.photos/64/64?random=2`, lastMessage: "Curtiu uma mensagem", time: "1 h", unread: false },
+                { id: "3", username: "j****guilherme", fullName: "J*** G*******", avatar: `https://picsum.photos/64/64?random=3`, lastMessage: "fala meu querido", time: "1 h", unread: false }
+            ];
+        }
+
+        // Generate messages
+        function generateMessages(chatId) {
+            const conversations = [
+                { id: "1", text: "Oi, tudo bem? Vi seu perfil e achei interessante 😊", time: "12:46", sent: false, read: true },
+                { id: "2", text: "Obrigada! Seu perfil também é muito legal ✨", time: "12:47", sent: true, read: true },
+                { id: "3", text: "Você curte fotografia? Vi que tem algumas fotos legais 📸", time: "12:48", sent: false, read: true },
+                { id: "4", text: "Sim! É um dos meus hobbies favoritos", time: "12:49", sent: true, read: true },
+                { id: "5", text: "Que legal! Posso ver mais do seu trabalho? 👀", time: "12:50", sent: false, read: true, image: feedData },
+                { id: "6", text: "Claro! Aqui está uma das minhas fotos favoritas", time: "12:51", sent: true, read: true }
+            ];
+            return conversations;
+        }
+
+        // Render functions
+        function renderStories() {
+            const container = document.getElementById('stories-container');
+            container.innerHTML = '';
+            
+            // User's story
+            const userStory = document.createElement('div');
+            userStory.className = 'flex flex-col items-center flex-shrink-0 w-20';
+            userStory.innerHTML = `
+                <div class="relative mb-2">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br p-0.5">
+                        <div class="w-full h-full rounded-full overflow-hidden">
+                            <img src="${profileData?.profile_pic_url ? `${API_BASE_URL}/api/proxy/instagram-image?url=${encodeURIComponent(profileData.profile_pic_url)}` : `https://picsum.photos/64/64?random=${username}`}" 
+                                 alt="Profile" class="w-full h-full object-cover" 
+                                 onerror="this.src='https://picsum.photos/64/64?random=${username}'">
+                        </div>
+                    </div>
+                </div>
+                <span class="text-xs text-center text-gray-600 truncate w-full">Sua nota</span>
+            `;
+            container.appendChild(userStory);
+
+            // Followers stories
+            followersData.slice(0, 8).forEach((follower) => {
+                const storyElement = document.createElement('div');
+                storyElement.className = 'flex flex-col items-center flex-shrink-0 w-20';
+                storyElement.innerHTML = `
+                    <div class="relative mb-2">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-br p-0.5">
+                            <div class="w-full h-full rounded-full overflow-hidden">
+                                <img src="${API_BASE_URL}/api/proxy/instagram-image?url=${encodeURIComponent(follower.profile_pic_url)}" alt="Profile" class="w-full h-full object-cover blur-content"
+                                     onerror="this.src='https://picsum.photos/64/64?random=${follower.id}'">
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs text-center text-gray-600 truncate w-full blur-light">
+                        ${follower.full_name?.split(' ')[0] || 'Unknown'}
+                    </span>
+                `;
+                container.appendChild(storyElement);
+            });
+        }
+
+        function renderChats() {
+            const container = document.getElementById('chats-container');
+            container.innerHTML = '';
+            
+            mockChats.forEach((chat, index) => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'flex items-center px-4 py-4 hover:bg-gray-50 cursor-pointer transition-colors';
+                chatElement.innerHTML = `
+                    <div class="relative mr-4">
+                        <div class="w-16 h-16 rounded-full overflow-hidden">
+                            <img src="${chat.avatar}" alt="${chat.username}" class="w-full h-full object-cover blur-content"
+                                 onerror="this.src='https://picsum.photos/64/64?random=${chat.id}'">
+                        </div>
+                        ${chat.online ? '<div class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
+                    </div>
+                    <div class="flex-1 min-w-0 ml-2">
+                        <div class="flex items-center justify-between">
+                            <p class="font-medium text-black text-base truncate blur-content max-w-[150px]">${chat.fullName}</p>
+                            <div class="flex items-center gap-2">
+                                ${index % 4 === 0 ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : '<i class="fas fa-camera text-gray-400"></i>'}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <p class="text-sm max-w-[180px] truncate blur-content ${chat.unread ? 'text-black' : 'text-gray-500'}">${chat.lastMessage}</p>
+                            <span class="text-gray-400 text-sm">•</span>
+                            <span class="text-sm text-gray-400 flex-shrink-0 blur-content">${chat.time}</span>
+                        </div>
+                    </div>
+                `;
+                chatElement.addEventListener('click', () => handleChatClick(chat));
+                container.appendChild(chatElement);
+            });
+
+            // Add additional chats
+            const additionalChats = [
+                { name: "M***a S****", message: "Viu sua mensagem", time: "2 h" },
+                { name: "J***o P****", message: "Enviou uma foto", time: "3 h" },
+                { name: "L***a M****", message: "Online agora", time: "4 h" },
+                { name: "R***o L****", message: "Reagiu ao seu story", time: "5 h" },
+                { name: "C***a A****", message: "Mandou um áudio", time: "6 h" },
+                { name: "P***o S****", message: "Curtiu uma mensagem", time: "7 h" },
+                { name: "A***a C****", message: "Está digitando...", time: "8 h" },
+                { name: "T***o R****", message: "Enviou um reel", time: "9 h" },
+                { name: "F***a O****", message: "Viu seu story", time: "10 h" },
+                { name: "G***o N****", message: "Quer conversar", time: "11 h" }
+            ];
+
+            additionalChats.forEach((chat, index) => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'flex items-center px-4 py-4 hover:bg-gray-50 cursor-pointer transition-colors';
+                chatElement.innerHTML = `
+                    <div class="relative mr-4">
+                        <div class="w-16 h-16 rounded-full overflow-hidden">
+                            <img src="https://picsum.photos/64/64?random=${index + 200}" alt="Profile" class="w-full h-full object-cover blur-content">
+                        </div>
+                        ${index % 5 === 0 ? '<div class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
+                    </div>
+                    <div class="flex-1 min-w-0 ml-2">
+                        <div class="flex items-center justify-between">
+                            <p class="font-medium text-black text-base truncate blur-content">${chat.name}</p>
+                            <div class="flex items-center gap-2">
+                                ${index % 4 === 0 ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : '<i class="fas fa-camera text-gray-400"></i>'}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <p class="text-sm truncate blur-content text-gray-500">${chat.message}</p>
+                            <span class="text-gray-400 text-sm">•</span>
+                            <span class="text-sm text-gray-400 flex-shrink-0 blur-content">${chat.time}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(chatElement);
+            });
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
+            
+            messages.forEach((message) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = `flex ${message.sent ? 'justify-end' : 'justify-start'} blur-content mb-4`;
+                
+                let messageContent = '';
+                if (message.image) {
+                    messageContent += `<div class="mb-2"><img src="${message.image}" alt="Message image" class="rounded-lg blur-light w-48 h-36 object-cover" onerror="this.style.display='none'"></div>`;
+                }
+                
+                messageElement.innerHTML = `
+                    <div class="max-w-xs">
+                        ${messageContent}
+                        <div class="${message.sent ? 'bg-blue-500 text-white' : 'bg-gray-100 text-black'} px-4 py-2 rounded-2xl">
+                            <p class="text-sm">${message.text}</p>
+                        </div>
+                        <div class="flex items-center justify-end gap-1 mt-1 px-2">
+                            <span class="text-xs text-gray-500">${message.time}</span>
+                            ${message.sent ? (message.read ? '<i class="fas fa-check-double text-blue-500 text-xs"></i>' : '<i class="fas fa-check text-gray-400 text-xs"></i>') : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(messageElement);
+            });
+        }
+
+        // Event handlers
+        function handleChatClick(chat) {
+            selectedChat = chat;
+            setCurrentView('chat');
+            
+            document.getElementById('chat-avatar').src = chat.avatar;
+            document.getElementById('chat-username').textContent = chat.username;
+            document.getElementById('chat-fullname').textContent = chat.fullName;
+            
+            const messages = generateMessages(chat.id);
+            renderMessages(messages);
+        }
+
+        function handleBackClick() {
+            setCurrentView('main');
+            selectedChat = null;
+        }
+
+        function setCurrentView(view) {
+            currentView = view;
+            document.getElementById('main-view').classList.toggle('hidden', view !== 'main');
+            document.getElementById('chat-view').classList.toggle('hidden', view !== 'chat');
+        }
+
+        // Notification system
+        function showNewMessagePopup() {
+            const popup = document.getElementById('message-popup');
+            popup.classList.remove('hidden');
+            popup.classList.add('flex', 'animate-fade-in');
+            
+            setTimeout(() => {
+                popup.classList.add('hidden');
+                popup.classList.remove('flex', 'animate-fade-in');
+            }, 4000);
+        }
+
+        function scheduleNotifications() {
+            const showPopup = () => {
+                showNewMessagePopup();
+                const intervals = [8000, 15000, 25000];
+                const randomInterval = intervals[Math.floor(Math.random() * intervals.length)];
+                setTimeout(showPopup, randomInterval);
+            };
+            setTimeout(showPopup, 3000);
+        }
+
+        // Initialization
+        async function initializeApp() {
+            const urlUsername = getUrlParameter('username');
+            console.log(urlUsername);
+            if (urlUsername) username = urlUsername;
+            
+            document.getElementById('username-header').textContent = username;
+            
+            // Test server connection first
+            const serverOnline = await testServerConnection();
+            if (!serverOnline) {
+                console.warn('Server appears to be offline or CORS is not configured properly');
+            }
+            
+            try {
+                const [profileResponse, followersResponse, feedResponse] = await Promise.all([
+                    fetchProfileData(username),
+                    fetchFollowersAndStories(username),
+                    fetchFeedMedia(username)
+                ]);
+                
+                if (profileResponse?.data) profileData = profileResponse.data;
+                if (followersResponse?.data?.items) followersData = followersResponse.data.items;
+                if (feedResponse?.data?.items && feedResponse.data.items.length > 0) {
+                    feedData = `https://instag-api-p2pfp.ondigitalocean.app/api/proxy/instagram-image?url=${encodeURIComponent(feedResponse.data.items[0].thumbnail_url)}`;
+                }
+                
+                mockChats = generateChatsFromFollowers();
+                renderStories();
+                renderChats();
+                
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('main-view').classList.remove('hidden');
+                scheduleNotifications();
+                
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('main-view').classList.remove('hidden');
+                
+                // Use fallback data
+                mockChats = generateChatsFromFollowers();
+                renderStories();
+                renderChats();
+                scheduleNotifications();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('back-button').addEventListener('click', handleBackClick);
+            document.getElementById('access-button').addEventListener('click', () => {
+                window.location.href = 'https://secret.spyme.app/click';
+            });
+            initializeApp();
+        });
+    </script>
+</body>
+</html> 
