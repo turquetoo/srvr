@@ -202,13 +202,19 @@
         async function testServerConnection() {
             try {
                 console.log('Testing server connection...');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds
+                
                 const response = await fetch(`${API_BASE_URL}/health`, {
                     method: 'GET',
                     mode: 'cors',
                     headers: {
                         'Accept': 'application/json',
-                    }
+                    },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -229,6 +235,10 @@
             try {
                 console.log('Fetching profile data for:', username);
                 console.log('Using API URL:', `${API_BASE_URL}/api/profile-data`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
+                
                 const response = await fetch(`${API_BASE_URL}/api/profile-data`, {
                     method: 'POST',
                     mode: 'cors',
@@ -236,8 +246,11 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ username })
+                    body: JSON.stringify({ username }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -266,6 +279,10 @@
             try {
                 console.log('Fetching followers for:', username);
                 console.log('Using API URL:', `${API_BASE_URL}/api/followers-stories`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
+                
                 const response = await fetch(`${API_BASE_URL}/api/followers-stories`, {
                     method: 'POST',
                     mode: 'cors',
@@ -273,8 +290,11 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ username })
+                    body: JSON.stringify({ username }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -307,6 +327,10 @@
             try {
                 console.log('Fetching feed for:', username);
                 console.log('Using API URL:', `${API_BASE_URL}/api/feed-media`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds
+                
                 const response = await fetch(`${API_BASE_URL}/api/feed-media`, {
                     method: 'POST',
                     mode: 'cors',
@@ -314,8 +338,11 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ username })
+                    body: JSON.stringify({ username }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

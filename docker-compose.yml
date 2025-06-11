@@ -8,13 +8,24 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - TIMEOUT_REQUEST=60000
+      - TIMEOUT_SOCKET=70000
+      - NODE_OPTIONS=--max-old-space-size=2048
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "--max-time",
+          "15",
+          "http://localhost:3000/health",
+        ]
+      interval: 45s
+      timeout: 20s
       retries: 3
-      start_period: 30s
+      start_period: 40s
     volumes:
       - app_logs:/app/logs
     networks:

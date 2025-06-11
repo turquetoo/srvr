@@ -9,8 +9,21 @@ const { promisify } = require('util');
 
 const execAsync = promisify(exec);
 
+// Retry helper function with increased timeout
+async function execWithRetry(command, options = { timeout: 45000 }, maxRetries = 2) {
+    for (let i = 0; i <= maxRetries; i++) {
+        try {
+            return await execAsync(command, options);
+        } catch (error) {
+            console.log(`Attempt ${i + 1} failed:`, error.message);
+            if (i === maxRetries) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+        }
+    }
+}
+
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Security and performance middleware
 app.use(helmet({
@@ -77,6 +90,13 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Increase request timeout to 60 seconds
+app.use((req, res, next) => {
+    req.setTimeout(60000); // 60 seconds
+    res.setTimeout(60000); // 60 seconds
+    next();
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ 
@@ -114,7 +134,7 @@ app.post('/api/profile-data', async (req, res) => {
           --compressed \\
           -d "{\\"username\\": \\"${username}\\"}"`;
 
-        const { stdout } = await execAsync(curlCommand);
+        const { stdout } = await execWithRetry(curlCommand, { timeout: 30000 });
         
         if (!stdout || stdout.trim() === "") {
             return res.json({
@@ -164,7 +184,7 @@ app.post('/api/followers-stories', async (req, res) => {
           --compressed \\
           -d "{\\"username\\": \\"${username}\\"}"`;
 
-        const { stdout } = await execAsync(curlCommand);
+        const { stdout } = await execWithRetry(curlCommand, { timeout: 30000 });
         const data = JSON.parse(stdout);
         console.log(`Followers and stories response for ${username}:`, data);
         res.json(data);
@@ -212,7 +232,7 @@ app.post('/api/feed-media', async (req, res) => {
           --compressed \\
           -d "{\\"username\\": \\"${username}\\"}"`;
 
-        const { stdout } = await execAsync(curlCommand);
+        const { stdout } = await execWithRetry(curlCommand, { timeout: 30000 });
         const data = JSON.parse(stdout);
         console.log(`Feed media response for ${username}:`, data);
         res.json(data);
@@ -244,7 +264,7 @@ app.get('/api/proxy/instagram-image', async (req, res) => {
                 'Referer': 'https://www.instagram.com/',
                 'Accept': 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
             },
-            timeout: 15000
+            timeout: 30000
         });
 
         if (!response.ok) {
@@ -332,9 +352,14 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
     console.log(`📱 Instagram clone: http://0.0.0.0:${PORT}/upinstagram1.html?username=c.dthr`);
     console.log(`🔍 Health check: http://0.0.0.0:${PORT}/health`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-}); 
+});
+
+// Increase server timeout to 70 seconds (longer than request timeout)
+server.timeout = 70000;
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000; 
