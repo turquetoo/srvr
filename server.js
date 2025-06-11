@@ -33,8 +33,41 @@ app.use(cors({
             'https://insta-trek-ll8dg.ondigitalocean.app'
           ] 
         : '*',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200
 }));
+
+// Additional CORS headers for all responses
+app.use((req, res, next) => {
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+        ? [
+            'https://instag-api-p2pfp.ondigitalocean.app',
+            'https://insta-trek-ll8dg.ondigitalocean.app'
+          ]
+        : ['*'];
+    
+    const origin = req.headers.origin;
+    if (process.env.NODE_ENV === 'production') {
+        if (allowedOrigins.includes(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+        }
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+    
+    next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
