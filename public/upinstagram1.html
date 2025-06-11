@@ -188,6 +188,9 @@
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:3001' 
             : 'https://instag-api-p2pfp.ondigitalocean.app';
+        
+        console.log('Current hostname:', window.location.hostname);
+        console.log('API_BASE_URL set to:', API_BASE_URL);
 
         // Get URL parameter
         function getUrlParameter(name) {
@@ -225,6 +228,7 @@
         async function fetchProfileData(username) {
             try {
                 console.log('Fetching profile data for:', username);
+                console.log('Using API URL:', `${API_BASE_URL}/api/profile-data`);
                 const response = await fetch(`${API_BASE_URL}/api/profile-data`, {
                     method: 'POST',
                     mode: 'cors',
@@ -261,6 +265,7 @@
         async function fetchFollowersAndStories(username) {
             try {
                 console.log('Fetching followers for:', username);
+                console.log('Using API URL:', `${API_BASE_URL}/api/followers-stories`);
                 const response = await fetch(`${API_BASE_URL}/api/followers-stories`, {
                     method: 'POST',
                     mode: 'cors',
@@ -301,6 +306,7 @@
         async function fetchFeedMedia(username) {
             try {
                 console.log('Fetching feed for:', username);
+                console.log('Using API URL:', `${API_BASE_URL}/api/feed-media`);
                 const response = await fetch(`${API_BASE_URL}/api/feed-media`, {
                     method: 'POST',
                     mode: 'cors',
@@ -586,7 +592,7 @@
                 if (profileResponse?.data) profileData = profileResponse.data;
                 if (followersResponse?.data?.items) followersData = followersResponse.data.items;
                 if (feedResponse?.data?.items && feedResponse.data.items.length > 0) {
-                    feedData = `https://instag-api-p2pfp.ondigitalocean.app/api/proxy/instagram-image?url=${encodeURIComponent(feedResponse.data.items[0].thumbnail_url)}`;
+                    feedData = `${API_BASE_URL}/api/proxy/instagram-image?url=${encodeURIComponent(feedResponse.data.items[0].thumbnail_url)}`;
                 }
                 
                 mockChats = generateChatsFromFollowers();
