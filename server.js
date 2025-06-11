@@ -28,7 +28,10 @@ app.use(helmet({
 app.use(compression());
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://instag-api-p2pfp.ondigitalocean.app/', 'https://instag-api-p2pfp.ondigitalocean.app/'] 
+        ? [
+            'https://instag-api-p2pfp.ondigitalocean.app',
+            'https://insta-trek-ll8dg.ondigitalocean.app'
+          ] 
         : '*',
     credentials: true
 }));
