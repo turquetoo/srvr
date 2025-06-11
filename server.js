@@ -4,9 +4,13 @@ const path = require('path');
 const fetch = require('node-fetch');
 const compression = require('compression');
 const helmet = require('helmet');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+
+const execAsync = promisify(exec);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Security and performance middleware
 app.use(helmet({
@@ -24,7 +28,7 @@ app.use(helmet({
 app.use(compression());
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://yourdomain.com', 'https://www.yourdomain.com'] 
+        ? ['https://instag-api-p2pfp.ondigitalocean.app/', 'https://instag-api-p2pfp.ondigitalocean.app/'] 
         : '*',
     credentials: true
 }));
@@ -51,38 +55,40 @@ app.post('/api/profile-data', async (req, res) => {
         
         console.log(`Fetching profile data for: ${username}`);
         
-        const response = await fetch('https://spyapp.website/api/n8n/getProfileData.php', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer 67f891fa157d1c7819702c7d',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6',
-                'Origin': 'https://spyapp.solutions',
-                'Referer': 'https://spyapp.solutions/',
-                'Sec-Fetch-Site': 'cross-site',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Dest': 'empty',
-                'Priority': 'u=1, i'
-            },
-            body: JSON.stringify({ username }),
-            timeout: 30000
-        });
+        const curlCommand = `curl -X POST "https://spyapp.website/api/n8n/getProfileData.php" \\
+          --http2 \\
+          -H "Authorization: Bearer 67f891fa157d1c7819702c7d" \\
+          -H 'Accept: */*' \\
+          -H 'Accept-Encoding: gzip, deflate, br, zstd' \\
+          -H 'Accept-Language: pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6' \\
+          -H 'Content-Type: application/json' \\
+          -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36' \\
+          -H 'Origin: https://spyapp.solutions' \\
+          -H 'Sec-Fetch-Site: cross-site' \\
+          -H 'Sec-Fetch-Mode: cors' \\
+          -H 'Sec-Fetch-Dest: empty' \\
+          -H 'Referer: https://spyapp.solutions/' \\
+          -H 'Priority: u=1, i' \\
+          --compressed \\
+          -d "{\\"username\\": \\"${username}\\"}"`;
+
+        const { stdout } = await execAsync(curlCommand);
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!stdout || stdout.trim() === "") {
+            return res.json({
+                data: undefined,
+                message: "Empty response from API",
+            });
         }
-        
-        const data = await response.json();
+
+        const data = JSON.parse(stdout);
         console.log(`Profile data response for ${username}:`, data);
         res.json(data);
     } catch (error) {
         console.error('Profile data error:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch profile data', 
-            message: error.message 
+        res.json({
+            data: undefined,
+            message: "Failed to fetch profile data",
         });
     }
 });
@@ -95,38 +101,42 @@ app.post('/api/followers-stories', async (req, res) => {
             return res.status(400).json({ error: 'Username is required' });
         }
         
-        console.log(`Fetching followers for: ${username}`);
+        console.log(`Fetching followers and stories for: ${username}`);
         
-        const response = await fetch('https://spyapp.website/api/n8n/getFollowersAndStories.php', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer 67f891fa157d1c7819702c7d',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*',
-                'Origin': 'https://spyapp.solutions',
-                'Referer': 'https://spyapp.solutions/',
-                'Sec-Fetch-Site': 'cross-site',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Dest': 'empty',
-                'Priority': 'u=1, i'
-            },
-            body: JSON.stringify({ username }),
-            timeout: 30000
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log(`Followers data response for ${username}:`, data);
+        const curlCommand = `curl -X POST "https://spyapp.website/api/n8n/getFollowersAndStories.php" \\
+          --http2 \\
+          -H "Authorization: Bearer 67f891fa157d1c7819702c7d" \\
+          -H 'Sec-Ch-Ua-Platform: "Linux"' \\
+          -H 'Accept-Language: en-US,en;q=0.9' \\
+          -H 'Accept: application/json, text/plain, */*' \\
+          -H 'Sec-Ch-Ua: "Not?A_Brand";v="99", "Chromium";v="130"' \\
+          -H 'Content-Type: application/json' \\
+          -H 'Sec-Ch-Ua-Mobile: ?0' \\
+          -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36' \\
+          -H 'Origin: https://spyapp.solutions' \\
+          -H 'Sec-Fetch-Site: cross-site' \\
+          -H 'Sec-Fetch-Mode: cors' \\
+          -H 'Sec-Fetch-Dest: empty' \\
+          -H 'Referer: https://spyapp.solutions/' \\
+          -H 'Priority: u=1, i' \\
+          --compressed \\
+          -d "{\\"username\\": \\"${username}\\"}"`;
+
+        const { stdout } = await execAsync(curlCommand);
+        const data = JSON.parse(stdout);
+        console.log(`Followers and stories response for ${username}:`, data);
         res.json(data);
     } catch (error) {
-        console.error('Followers error:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch followers', 
-            message: error.message 
+        console.error('Followers and stories error:', error);
+        res.json({
+            data: {
+                count: 0,
+                items: [],
+            },
+            stories: {
+                count: 0,
+                items: [],
+            },
         });
     }
 });
@@ -141,36 +151,37 @@ app.post('/api/feed-media', async (req, res) => {
         
         console.log(`Fetching feed media for: ${username}`);
         
-        const response = await fetch('https://spyapp.website/api/n8n/getFeedMidia.php', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer 67f891fa157d0c7819702c7d',
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*',
-                'Origin': 'https://spyapp.solutions',
-                'Referer': 'https://spyapp.solutions/',
-                'Sec-Fetch-Site': 'cross-site',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Dest': 'empty',
-                'Priority': 'u=1, i'
-            },
-            body: JSON.stringify({ username }),
-            timeout: 30000
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const curlCommand = `curl -X POST "https://spyapp.website/api/n8n/getFeedMidia.php" \\
+          --http2 \\
+          -H "Authorization: Bearer 67f891fa157d1c7819702c7d" \\
+          -H 'Sec-Ch-Ua-Platform: "Linux"' \\
+          -H 'Accept-Language: en-US,en;q=0.9' \\
+          -H 'Accept: application/json, text/plain, */*' \\
+          -H 'Sec-Ch-Ua: "Not?A_Brand";v="99", "Chromium";v="130"' \\
+          -H 'Content-Type: application/json' \\
+          -H 'Sec-Ch-Ua-Mobile: ?0' \\
+          -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.70 Safari/537.36' \\
+          -H 'Origin: https://spyapp.solutions' \\
+          -H 'Sec-Fetch-Site: cross-site' \\
+          -H 'Sec-Fetch-Mode: cors' \\
+          -H 'Sec-Fetch-Dest: empty' \\
+          -H 'Referer: https://spyapp.solutions/' \\
+          -H 'Priority: u=1, i' \\
+          --compressed \\
+          -d "{\\"username\\": \\"${username}\\"}"`;
+
+        const { stdout } = await execAsync(curlCommand);
+        const data = JSON.parse(stdout);
         console.log(`Feed media response for ${username}:`, data);
         res.json(data);
     } catch (error) {
         console.error('Feed media error:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch feed media', 
-            message: error.message 
+        res.json({
+            data: {
+                username,
+                count: 0,
+                items: [],
+            },
         });
     }
 });
